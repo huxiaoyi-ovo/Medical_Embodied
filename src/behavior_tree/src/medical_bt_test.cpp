@@ -901,6 +901,13 @@ int main()
         });
     });
 
+    bool all_sections_passed = true;
+    const auto report_result = [&all_sections_passed](bool passed, const char* metric, int delta) {
+        all_sections_passed = all_sections_passed && passed;
+        std::cout << "[TEST] 结果: " << (passed ? "PASS" : "FAIL")
+                  << " (" << metric << delta << ")\n";
+    };
+
     try
     {
         constexpr int kTickHz = 20;
@@ -932,8 +939,7 @@ int main()
                 int current = g_metrics.llm_done + g_metrics.alert_fault_localization + g_metrics.alert_fault_navigation +
                               g_metrics.alert_fault_self + g_metrics.patrol_point;
                 int delta = current - start;
-                std::cout << "[TEST] 结果: " << (delta == 0 ? "PASS" : "FAIL")
-                          << " (unexpected_events=" << delta << ")\n";
+                report_result(delta == 0, "unexpected_events=", delta);
             }
             bb->set("call_signal", false);
             bb->set("battery_low", false);
@@ -958,8 +964,7 @@ int main()
                 std::cout << "\n[TEST] Section end: call signal response.\n";
                 int start = getInt(bb, "section_call_signal_m", 0);
                 int delta = g_metrics.llm_call_response - start;
-                std::cout << "[TEST] 结果: " << (delta >= 1 ? "PASS" : "FAIL")
-                          << " (llm_call_response+=" << delta << ")\n";
+                report_result(delta >= 1, "llm_call_response+=", delta);
             }
             if (tick >= 15 && tick <= 18)
             {
@@ -982,8 +987,7 @@ int main()
                 std::cout << "\n[TEST] Section end: localization fault handling.\n";
                 int start = getInt(bb, "section_loc_m", 0);
                 int delta = g_metrics.alert_fault_localization - start;
-                std::cout << "[TEST] 结果: " << (delta >= 1 ? "PASS" : "FAIL")
-                          << " (alert_fault_localization+=" << delta << ")\n";
+                report_result(delta >= 1, "alert_fault_localization+=", delta);
                 if (g_root_bb)
                 {
                     g_root_bb->set("patrol_triggered", false);
@@ -1010,8 +1014,7 @@ int main()
                 std::cout << "\n[TEST] Section end: navigation fault handling.\n";
                 int start = getInt(bb, "section_nav_m", 0);
                 int delta = g_metrics.alert_fault_navigation - start;
-                std::cout << "[TEST] 结果: " << (delta >= 1 ? "PASS" : "FAIL")
-                          << " (alert_fault_navigation+=" << delta << ")\n";
+                report_result(delta >= 1, "alert_fault_navigation+=", delta);
                 if (g_root_bb)
                 {
                     g_root_bb->set("patrol_triggered", false);
@@ -1038,8 +1041,7 @@ int main()
                 std::cout << "\n[TEST] Section end: self fault handling.\n";
                 int start = getInt(bb, "section_self_m", 0);
                 int delta = g_metrics.alert_fault_self - start;
-                std::cout << "[TEST] 结果: " << (delta >= 1 ? "PASS" : "FAIL")
-                          << " (alert_fault_self+=" << delta << ")\n";
+                report_result(delta >= 1, "alert_fault_self+=", delta);
                 if (g_root_bb)
                 {
                     g_root_bb->set("patrol_triggered", false);
@@ -1062,8 +1064,7 @@ int main()
                 std::cout << "\n[TEST] Section end: low battery handling.\n";
                 int start = getInt(bb, "section_batt_m", 0);
                 int delta = g_metrics.wait_charge_start - start;
-                std::cout << "[TEST] 结果: " << (delta >= 1 ? "PASS" : "FAIL")
-                          << " (wait_charge_start+=" << delta << ")\n";
+                report_result(delta >= 1, "wait_charge_start+=", delta);
             }
             if (tick == 50 && g_root_bb)
             {
@@ -1081,8 +1082,7 @@ int main()
                 std::cout << "[SIM ] nurse_connected=true\n";
                 int start = getInt(bb, "section_nurse_m", 0);
                 int delta = g_metrics.call_duty_nurse - start;
-                std::cout << "[TEST] 结果: " << (delta >= 1 ? "PASS" : "FAIL")
-                          << " (call_duty_nurse+=" << delta << ")\n";
+                report_result(delta >= 1, "call_duty_nurse+=", delta);
             }
             if (tick == 45 && g_root_bb)
             {
@@ -1099,8 +1099,7 @@ int main()
                 std::cout << "\n[TEST] Section end: patrol run (cycles=2).\n";
                 int start = getInt(bb, "section_patrol_m", 0);
                 int delta = g_metrics.patrol_point - start;
-                std::cout << "[TEST] 结果: " << (delta >= 1 ? "PASS" : "FAIL")
-                          << " (patrol_point+=" << delta << ")\n";
+                report_result(delta >= 1, "patrol_point+=", delta);
             }
             if (tick == 90 && g_root_bb)
             {
@@ -1117,8 +1116,7 @@ int main()
                 std::cout << "\n[TEST] Section end: patrol run (cycles=1).\n";
                 int start = getInt(bb, "section_patrol1_m", 0);
                 int delta = g_metrics.patrol_point - start;
-                std::cout << "[TEST] 结果: " << (delta >= 1 ? "PASS" : "FAIL")
-                          << " (patrol_point+=" << delta << ")\n";
+                report_result(delta >= 1, "patrol_point+=", delta);
             }
             if (tick >= 95 && tick <= 98)
             {
@@ -1137,8 +1135,7 @@ int main()
                 std::cout << "\n[TEST] Section end: call signal late in run.\n";
                 int start = getInt(bb, "section_call2_m", 0);
                 int delta = g_metrics.llm_call_response - start;
-                std::cout << "[TEST] 结果: " << (delta >= 1 ? "PASS" : "FAIL")
-                          << " (llm_call_response+=" << delta << ")\n";
+                report_result(delta >= 1, "llm_call_response+=", delta);
             }
 
             std::cout << "\n=== TICK " << tick << " ===\n";
@@ -1153,5 +1150,5 @@ int main()
         return 1;
     }
 
-    return 0;
+    return all_sections_passed ? 0 : 1;
 }

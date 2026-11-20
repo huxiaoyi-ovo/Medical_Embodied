@@ -80,9 +80,9 @@ def detect_section_start(tick, sections):
 
 
 def detect_section_end(tick, sections):
-    for _, end_mark, _, end_title, _, _ in sections:
+    for _, end_mark, _, end_title, _, key in sections:
         if tick == end_mark - 1:
-            return end_title
+            return end_title, key
     return None
 
 
@@ -115,17 +115,22 @@ def count_metrics(lines):
 
 
 def section_metrics(ticks, sections):
+    blocks = dict(ticks)
     section_map = {}
     for start, end_mark, _, _, _, key in sections:
-        section_lines = []
-        for tick, block in ticks:
-            if start <= tick <= end_mark - 1:
-                section_lines.extend(block)
-        section_map[key] = count_metrics(section_lines)
+        expected_ticks = range(start, end_mark)
+        if any(tick not in blocks for tick in expected_ticks):
+            section_map[key] = None
+            continue
+        section_map[key] = count_metrics(
+            line for tick in expected_ticks for line in blocks[tick]
+        )
     return section_map
 
 
-def section_result_line(title, key, metrics):
+def section_result_line(key, metrics):
+    if metrics is None:
+        return "[TEST] 结果: INCOMPLETE (missing tick data)"
     if key == "baseline":
         unexpected = sum(metrics.values())
         return f"[TEST] 结果: {'PASS' if unexpected == 0 else 'FAIL'} (unexpected_events={unexpected})"
@@ -235,16 +240,11 @@ def main():
         out_lines.extend(block)
         out_lines.append("")
 
-        end_title = detect_section_end(tick, sections)
-        if end_title:
-            section_key = None
-            for start, end_mark, title, end_title_key, _, key in sections:
-                if end_title_key == end_title:
-                    section_key = key
-                    break
-            metrics = section_map.get(section_key, {})
+        end_info = detect_section_end(tick, sections)
+        if end_info:
+            end_title, section_key = end_info
             out_lines.append(f"[TEST] Section end: {end_title}")
-            out_lines.append(section_result_line(end_title, section_key, metrics))
+            out_lines.append(section_result_line(section_key, section_map[section_key]))
             out_lines.append("")
 
     output.parent.mkdir(parents=True, exist_ok=True)

@@ -2,6 +2,8 @@
 import argparse
 import re
 from pathlib import Path
+from stat import S_IMODE
+from tempfile import TemporaryDirectory
 
 
 LOG_IN = Path("/tmp/medical_bt_ros_test_raw.log")
@@ -256,8 +258,16 @@ def main():
             out_lines.append(section_result_line(section_key, section_map[section_key]))
             out_lines.append("")
 
-    output.parent.mkdir(parents=True, exist_ok=True)
-    output.write_text("\n".join(out_lines).rstrip() + "\n", encoding="utf-8")
+    try:
+        output.parent.mkdir(parents=True, exist_ok=True)
+        with TemporaryDirectory(prefix=".ros-test-log-", dir=output.parent) as directory:
+            temporary = Path(directory) / output.name
+            temporary.write_text("\n".join(out_lines).rstrip() + "\n", encoding="utf-8")
+            if output.is_file():
+                temporary.chmod(S_IMODE(output.stat().st_mode))
+            temporary.replace(output)
+    except OSError as error:
+        parser.error(f"cannot write formatted log {output}: {error.strerror}")
 
 
 if __name__ == "__main__":

@@ -168,6 +168,10 @@ def main():
     parser = argparse.ArgumentParser(description="Add section summaries to a raw ROS test log.")
     parser.add_argument("--input", type=Path, default=LOG_IN, help="raw test log")
     parser.add_argument("--output", type=Path, default=LOG_OUT, help="formatted test log")
+    parser.add_argument(
+        "--tick-offset", type=int,
+        help="runner tick corresponding to driver tick zero (default: infer from the first call response)",
+    )
     args = parser.parse_args()
     source = args.input.resolve()
     output = args.output.resolve()
@@ -183,11 +187,16 @@ def main():
     if any(right[0] <= left[0] for left, right in zip(ticks, ticks[1:])):
         parser.error("tick markers must increase; format each test run separately")
 
-    offset = 0
-    for tick, block in ticks:
-        if any("[START] LLMInteraction mode=call_response" in ln for ln in block):
-            offset = tick - 8
-            break
+    offset = args.tick_offset
+    if offset is None:
+        offset = next(
+            (
+                tick - 8
+                for tick, block in ticks
+                if any("[START] LLMInteraction mode=call_response" in ln for ln in block)
+            ),
+            0,
+        )
 
     sections = []
     for start, end, title, end_title, goal, key in BASE_SECTIONS:

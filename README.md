@@ -108,4 +108,7 @@ Message：`Battery.msg`、`Fault.msg`、`ActionStatus.msg` 等。
 python3 src/behavior_tree/scripts/format_ros_test_log.py --input raw.log --output reports/ros_test.log
 ```
 
+已知测试驱动的第 0 个 tick 对应执行器的第 20 个 tick 时，可加上
+`--tick-offset 20`。默认从首条呼叫响应事件估算偏移，首轮呼叫失败时应使用已知偏移，避免把后期的响应当作首轮响应。
+
 

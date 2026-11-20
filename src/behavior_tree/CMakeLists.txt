@@ -1,6 +1,25 @@
 cmake_minimum_required(VERSION 3.0.2)
 project(behavior_tree)
 
+option(BEHAVIOR_TREE_MOCK_TEST_ONLY "Build the standalone behavior tree mock test without ROS" OFF)
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+find_package(behaviortree_cpp REQUIRED)
+
+function(add_medical_bt_test)
+  add_executable(medical_bt_test src/medical_bt_test.cpp)
+  target_compile_definitions(medical_bt_test PRIVATE
+    MEDICAL_BT_TEST_XML="${CMAKE_CURRENT_SOURCE_DIR}/BH_xml/medical.xml"
+  )
+  target_link_libraries(medical_bt_test BT::behaviortree_cpp)
+endfunction()
+
+if(BEHAVIOR_TREE_MOCK_TEST_ONLY)
+  add_medical_bt_test()
+  target_compile_definitions(medical_bt_test PRIVATE MEDICAL_BT_TEST_NO_GROOT)
+  return()
+endif()
+
 ## Compile as C++11, supported in ROS Kinetic and newer
 # add_compile_options(-std=c++11)
 
@@ -15,10 +34,6 @@ find_package(catkin REQUIRED COMPONENTS
   std_msgs
 )
 
-set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(behaviortree_cpp_DIR "/home/val/Downloads/BehaviorTree.CPP/install/lib/cmake/behaviortree_cpp")
-find_package(behaviortree_cpp REQUIRED)
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
 
@@ -142,7 +157,7 @@ include_directories(
 ## The recommended prefix ensures that target names across packages don't collide
 add_executable(root_tree src/root_tree.cpp)
 add_executable(reactivefallback src/reactivefallback.cpp)
-add_executable(medical_bt_test src/medical_bt_test.cpp)
+add_medical_bt_test()
 add_executable(ros_bt_runner src/ros_bt_runner.cpp)
 
 ## Rename C++ executable without prefix
@@ -167,13 +182,6 @@ target_link_libraries(reactivefallback
   ${catkin_LIBRARIES}
 )
 target_link_libraries(reactivefallback
-  BT::behaviortree_cpp
-)
-
-target_link_libraries(medical_bt_test
-  ${catkin_LIBRARIES}
-)
-target_link_libraries(medical_bt_test
   BT::behaviortree_cpp
 )
 

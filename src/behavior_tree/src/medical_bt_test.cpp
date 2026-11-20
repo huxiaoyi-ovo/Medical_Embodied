@@ -1,5 +1,7 @@
 #include "behaviortree_cpp/bt_factory.h"
+#ifndef MEDICAL_BT_TEST_NO_GROOT
 #include "behaviortree_cpp/loggers/groot2_publisher.h"
+#endif
 #include <chrono>
 #include <functional>
 #include <iostream>
@@ -906,8 +908,10 @@ int main()
         std::cout << "[INFO] tick_rate=" << kTickHz << "Hz period=" << kTickPeriod.count() << "ms\n";
 
         g_root_bb = Blackboard::create();
-        auto tree = factory.createTreeFromFile("/home/val/BIH_ws/Medical_Embodied/src/behavior_tree/BH_xml/medical.xml", g_root_bb);
+        auto tree = factory.createTreeFromFile(MEDICAL_BT_TEST_XML, g_root_bb);
+#ifndef MEDICAL_BT_TEST_NO_GROOT
         Groot2Publisher publisher(tree,1667);
+#endif
         auto bb = tree.rootBlackboard();
 
         for (int tick = 0; tick < 140; ++tick)

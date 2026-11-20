@@ -84,7 +84,18 @@ Message：`Battery.msg`、`Fault.msg`、`ActionStatus.msg` 等。
 
 `src/behavior_tree/src/medical_bt_test.cpp`  
 作用：纯 C++ 行为树单元测试。用本地 mock 节点替代 ROS，用日志验证每条分支是否按预期执行。  
-使用方式：直接运行生成的测试二进制，查看 `logs/medical_bt_test.log`。  
+可在仓库根目录单独构建此测试。下例中的 `CMAKE_PREFIX_PATH` 指向 BehaviorTree.CPP 4.x 的安装前缀。
+
+```bash
+cmake -S src/behavior_tree -B build/medical-mock \
+  -DBEHAVIOR_TREE_MOCK_TEST_ONLY=ON \
+  -DCMAKE_PREFIX_PATH=/path/to/BehaviorTree.CPP/install
+cmake --build build/medical-mock --target medical_bt_test
+./build/medical-mock/medical_bt_test > build/medical-mock/test.log
+```
+
+此构建仅运行 mock 测试，直接读取仓库中的 `BH_xml/medical.xml`，无需 ROS 或 Groot2 连接。
+
 参考点：每个 mock 节点的输入/输出与日志格式，方便你对照真实节点需要产生的状态与行为。
 
 `src/behavior_tree/src/ros_bt_runner.cpp`  

@@ -173,6 +173,10 @@ def main():
 
     lines = source.read_text(encoding="utf-8").splitlines()
     preamble, ticks = split_ticks(lines)
+    if not ticks:
+        parser.error("the input contains no ROS test tick markers")
+    if any(right[0] <= left[0] for left, right in zip(ticks, ticks[1:])):
+        parser.error("tick markers must increase; format each test run separately")
 
     offset = 0
     for tick, block in ticks:

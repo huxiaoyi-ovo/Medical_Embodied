@@ -102,4 +102,10 @@ Message：`Battery.msg`、`Fault.msg`、`ActionStatus.msg` 等。
 - 如何驱动黑板触发条件（call_signal、fault、battery 等）。  
 - 日志格式 `[SET]/[ACT]/[COND]/[START]/[RUN]/[DONE]`，便于和 `medical_bt_test.cpp` 对齐。
 
+如需给保存的 ROS 测试日志添加分段摘要，可在仓库根目录运行以下命令。输出目录不存在时会自动创建。
+
+```bash
+python3 src/behavior_tree/scripts/format_ros_test_log.py --input raw.log --output reports/ros_test.log
+```
+
 

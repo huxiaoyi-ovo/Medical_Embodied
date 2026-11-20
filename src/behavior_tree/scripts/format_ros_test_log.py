@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
+import argparse
 import re
 from pathlib import Path
 
 
 LOG_IN = Path("/tmp/medical_bt_ros_test_raw.log")
-LOG_OUT = Path("src/behavior_tree/logs/medical_bt_ros_test.log")
+LOG_OUT = Path(__file__).resolve().parents[1] / "logs" / "medical_bt_ros_test.log"
 
 
 TICK_RE = re.compile(r"^=== TICK (\d+) ===$")
@@ -159,10 +160,18 @@ def section_result_line(title, key, metrics):
 
 
 def main():
-    if not LOG_IN.exists():
-        raise SystemExit(f"missing log: {LOG_IN}")
+    parser = argparse.ArgumentParser(description="Add section summaries to a raw ROS test log.")
+    parser.add_argument("--input", type=Path, default=LOG_IN, help="raw test log")
+    parser.add_argument("--output", type=Path, default=LOG_OUT, help="formatted test log")
+    args = parser.parse_args()
+    source = args.input.resolve()
+    output = args.output.resolve()
+    if not source.is_file():
+        parser.error(f"missing log: {source}")
+    if source == output or (output.exists() and output.samefile(source)):
+        parser.error("input and output must be different files")
 
-    lines = [ln.rstrip("\n") for ln in LOG_IN.read_text().splitlines()]
+    lines = source.read_text(encoding="utf-8").splitlines()
     preamble, ticks = split_ticks(lines)
 
     offset = 0
@@ -234,7 +243,8 @@ def main():
             out_lines.append(section_result_line(end_title, section_key, metrics))
             out_lines.append("")
 
-    LOG_OUT.write_text("\n".join(out_lines).rstrip() + "\n")
+    output.parent.mkdir(parents=True, exist_ok=True)
+    output.write_text("\n".join(out_lines).rstrip() + "\n", encoding="utf-8")
 
 
 if __name__ == "__main__":
